@@ -1,0 +1,74 @@
+---
+title: "Homework-5_Final_Draft"
+format: html
+editor: visual
+---
+
+# Homework 5 Final Draft
+
+## Introduction
+
+## Methods
+
+-   Sampling methods....
+
+-   Data org and processing....
+
+#### Visualizing Missing Data
+
+```{r missing-data-visualization}
+gg_miss_var(plant)
+```
+
+*Caption*
+
+*Discussion....*
+
+#### Visualization of Pearson's Correlation Between Variables
+
+```{r correlation-plot}
+#calculate Pearson's R for numerical values only
+plant_cor <- plant_subset %>%
+  select(feedlevel:num_phylls) %>%
+  cor(method="pearson")
+
+#creating a correlation plot
+corrplot(plant_cor,
+         # change the shape of what's in the cells
+         method = "ellipse",
+         addCoef.col = "black"
+         )
+
+```
+
+*Caption...*
+
+*Discussion...*
+
+#### Relationships Between Variables
+
+```{r pairs-plot}
+plant_subset %>%
+  select(species:num_phylls) %>%
+  ggpairs()
+```
+
+*Caption...*
+
+*Discussion...*
+
+#### Creating a Null and Full Model
+
+```{r null-and-full-model}
+null <- lm(totmass ~ 1, data = plant_subset)
+full <- lm(totmass ~ species + feedlevel + sla + chlorophyll + amass + num_lvs + num_phylls, data = plant_subset)
+```
+
+```{r full-diagnostics}
+par(mfrow = c(2, 2))
+plot(full)
+```
+
+*Discussion...*
+
+## Results
