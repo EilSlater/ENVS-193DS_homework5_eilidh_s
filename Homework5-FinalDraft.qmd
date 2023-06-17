@@ -14,6 +14,53 @@ editor: visual
 
 -   Data org and processing....
 
+#### Data Set-Up
+
+```{r}
+install.packages("here")
+install.packages("janitor")
+install.packages("ggeffects")
+install.packages("performance")
+install.packages("naniar")
+install.packages("flextable")
+install.packages("car")
+install.packages("broom")
+install.packages("corrplot")
+install.packages("AICcmodavg")
+install.packages("GGally")
+install.packages("MuMIn")
+
+library(tidyverse)
+library(here)
+library(janitor)
+library(ggeffects)
+library(performance)
+library(naniar) 
+library(flextable)
+library(car)
+library(broom)
+library(corrplot)
+library(AICcmodavg)
+library(GGally)
+library(readr)
+library(MuMIn)
+```
+
+Read In Data
+
+```{r}
+
+directory <- "/Desktop/College/Year 3 (22-23)/Spring Quarter/ENV S 193DS/ENVS-193DS_homework5_eilidh_s/data/knb-lter-hrf.109.18"
+
+
+plant <- read_csv(here("data", "knb-lter-hfr.109.18", "hf109-01-sarracenia.csv")) %>% 
+  # make the column names cleaner
+  clean_names() %>% 
+  # selecting the columns of interest
+  select(totmass, species, feedlevel, sla, chlorophyll, amass, num_lvs, num_phylls)
+
+```
+
 #### Visualizing Missing Data
 
 ```{r missing-data-visualization}
@@ -25,6 +72,14 @@ gg_miss_var(plant)
 *Discussion....*
 
 #### Visualization of Pearson's Correlation Between Variables
+
+Subsetting the data by dropping NAs:
+
+```{r subset-drop-NA}
+plant_subset <- plant %>%
+  drop_na(sla, chlorophyll, amass, num_lvs, num_phylls) #FINISH
+
+```
 
 ```{r correlation-plot}
 #calculate Pearson's R for numerical values only
@@ -64,9 +119,98 @@ null <- lm(totmass ~ 1, data = plant_subset)
 full <- lm(totmass ~ species + feedlevel + sla + chlorophyll + amass + num_lvs + num_phylls, data = plant_subset)
 ```
 
+We visually assess normality and homoskedasticity of residuals using diagnostic plots for the full model
+
 ```{r full-diagnostics}
 par(mfrow = c(2, 2))
 plot(full)
+```
+
+We also tested for normality using the Shapiro-Wilk test (null hypothesis: variable of interest (i.e. the residuals) are normally distributed).
+
+We tested for heteroskedasticity using the Breusch-Pagan test (null hypothesis: variable of interest has constant variance).
+
+```{r}
+check_normality(full)
+check_heteroscedasticity(full)
+```
+
+Evaluate multicollinearity:
+
+```{r}
+car::vif(full_log)
+```
+
+```{r}
+
+model2_log <- lm(log(totmass) ~ species, data = plant_subset)
+plot(model2_log)
+```
+
+Check Normality of Data
+
+```{r}
+check_normality(model2_log)
+check_heteroscedasticity(model2_log)
+```
+
+```{r}
+AICc(full_log)
+```
+
+```{r}
+AICc(model2_log)
+```
+
+```{r}
+AICc(null_log)
+```
+
+```{r}
+MuMIn::AICc(full_log, model2_log, null_log)
+```
+
+```{r}
+MuMIn::model.sel(full_log, model2_log, null_log)
+```
+
+Full_log was the lowest AIC value, so using that...
+
+```{r}
+summary(full_log)
+```
+
+```{r}
+table <- tidy(full_log, conf.int = TRUE, exponentiate = TRUE) %>% 
+  # change the p-value numbers if they're really small
+  # change the estmaes, standard error, and t-tstatistics to round to ___ digits
+  # using mutate
+  # make it into a flextable
+  flextable() %>% 
+  # fit it to the viewer
+  autofit()
+
+table
+```
+
+Using ggpredict() to backtransform estimate
+
+```{r}
+model_pred <- ggpredict(full_log, terms = "species", back.transform = TRUE)
+
+plot(ggpredict(full_log, terms = "species", back.transform = TRUE), add.data = TRUE)
+```
+
+```{r}
+plot(ggpredict(full_log, terms = "chlorophyll", back.transform = TRUE), add.data = TRUE)
+```
+
+```{r}
+plot(ggpredict(full_log, terms = "sla", back.transform = TRUE), add.data = TRUE)
+```
+
+```{r}
+model_pred
 ```
 
 *Discussion...*
